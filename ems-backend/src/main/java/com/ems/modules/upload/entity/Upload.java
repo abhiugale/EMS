@@ -2,6 +2,7 @@ package com.ems.modules.upload.entity;
 
 import com.ems.modules.factory.entity.Factory;
 import com.ems.modules.user.entity.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,10 +24,12 @@ public class Upload {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "factory_id", nullable = false)
+    @JsonIgnore
     private Factory factory;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploaded_by")
+    @JsonIgnore
     private User uploadedBy;
 
     @Column(nullable = false)

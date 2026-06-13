@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AuthService.class);
+
 
     private final UserRepository userRepository;
     private final FactoryRepository factoryRepository;
@@ -136,7 +138,11 @@ public class AuthService {
         String email = jwtTokenProvider.extractUsername(jwt);
 
         // Put token in blacklist with expiration TTL matching token expiry duration
-        redisTemplate.opsForValue().set("blacklist:" + jwt, "true", jwtExpirationInMs, TimeUnit.MILLISECONDS);
+        try {
+            redisTemplate.opsForValue().set("blacklist:" + jwt, "true", jwtExpirationInMs, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            log.warn("Redis is offline or unreachable. Skipping token blacklisting: {}", e.getMessage());
+        }
 
         auditLogger.logLogout(email);
     }

@@ -105,6 +105,19 @@ Ensure the following services are running locally on your system:
 
 ---
 
+## 🔑 Default Demo Credentials
+
+For testing and verification, the database is pre-seeded with the following users (Password for all accounts is **`Admin@123`**):
+
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Administrator (ADMIN)** | `admin@ems.local` | `Admin@123` |
+| **Energy Manager (ENERGY_MGR)** | `manager@ems.local` | `Admin@123` |
+| **Supervisor (SUPERVISOR)** | `supervisor@ems.local` | `Admin@123` |
+| **Viewer (VIEWER)** | `viewer@ems.local` | `Admin@123` |
+
+---
+
 ## 🛠️ Troubleshooting & Environment Tips
 
 * **Python Dependency Compilation Errors:**

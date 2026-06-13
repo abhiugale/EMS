@@ -1,6 +1,7 @@
 package com.ems.modules.upload.service;
 
 import com.ems.modules.energy.dto.EnergyReadingDto;
+import com.ems.modules.factory.entity.Factory;
 import com.ems.modules.machine.entity.Machine;
 import com.ems.modules.machine.repository.MachineRepository;
 import com.ems.modules.upload.entity.Upload;
@@ -32,19 +33,39 @@ public class ExcelIngesterImpl implements EnergyReadingIngester {
     public void ingest(List<EnergyReadingDto> readings, UUID uploadId) {
         if (readings.isEmpty()) return;
 
-        Upload upload = uploadRepository.findById(uploadId)
+        Upload upload = uploadRepository.findByIdWithFactory(uploadId)
                 .orElseThrow(() -> new IllegalArgumentException("Upload record not found: " + uploadId));
+
 
         UUID factoryId = upload.getFactory().getId();
 
         // Get all machines of this factory to map name -> id
         List<Machine> machines = machineRepository.findByFactoryId(factoryId);
-        Map<String, UUID> machineMap = machines.stream()
+        Map<String, UUID> machineMap = new java.util.HashMap<>(machines.stream()
                 .collect(Collectors.toMap(
                         m -> m.getName().toLowerCase().trim(),
                         Machine::getId,
                         (existing, replacement) -> existing
-                ));
+                )));
+
+        Factory factory = upload.getFactory();
+
+        // Pre-create any missing machines
+        for (EnergyReadingDto dto : readings) {
+            String nameKey = dto.getMachineName().toLowerCase().trim();
+            if (!machineMap.containsKey(nameKey)) {
+                Machine newMachine = Machine.builder()
+                        .factory(factory)
+                        .name(dto.getMachineName().trim())
+                        .baselineKwh(java.math.BigDecimal.ZERO)
+                        .department("Imported")
+                        .machineType("Imported")
+                        .isActive(true)
+                        .build();
+                newMachine = machineRepository.save(newMachine);
+                machineMap.put(nameKey, newMachine.getId());
+            }
+        }
 
         String sql = "INSERT INTO energy_readings (" +
                 "machine_id, recorded_at, energy_kwh, active_kw, apparent_kva, reactive_kvar, " +

@@ -12,7 +12,9 @@ import com.ems.modules.energy.dto.EnergyReadingDto;
 import com.ems.modules.insight.service.MlClientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
 
 import java.time.Instant;
 import java.util.List;
@@ -30,6 +32,7 @@ public class UploadService {
     private final EnergyReadingIngester energyReadingIngester;
     private final MlClientService mlClientService;
 
+    @Transactional
     public UploadResultDto uploadAndProcess(MultipartFile file, Map<String, String> columnMapping, String timezone, UUID factoryId, UUID userId) {
         Factory factory = factoryRepository.findById(factoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Factory not found"));

@@ -9,12 +9,12 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://ems-backend:8080',
+        target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
       },
       '/ws': {
-        target: 'ws://ems-backend:8080',
+        target: 'ws://localhost:8080',
         ws: true,
         changeOrigin: true,
         secure: false,

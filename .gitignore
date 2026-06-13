@@ -1,0 +1,39 @@
+# Local configuration
+.env
+.env*.local
+
+# IDEs
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Node / JS
+node_modules/
+dist/
+build/
+.npm
+*.log
+
+# Java / Spring (Maven)
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/
+.metadata/
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/

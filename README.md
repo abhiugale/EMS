@@ -1,123 +1,123 @@
-# Energy Management System (EMS) - Traditional Setup & Execution Guide
+# ⚡ Energy Management System (EMS)
 
-This document describes how to set up, run, and develop the EMS application locally using traditional methods, bypassing Docker.
+Welcome to the **Energy Management System (EMS)**. This is a full-stack, enterprise-grade application designed to monitor industrial machinery energy consumption, run Isolation Forest anomaly detection, forecast weekly/daily load demands using Meta Prophet, and generate automated PDF reports.
 
----
+## 🏗️ Project Architecture & Services
 
-## 🛠️ Prerequisites & Infrastructure Services
+The system is composed of several independent services communicating over REST, WebSockets (STOMP), and Celery queues:
 
-Before starting the application services, ensure the following infrastructure dependencies are installed and running locally on your machine.
-
-### 1. Database (TimescaleDB / PostgreSQL 16)
-TimescaleDB is an extension of PostgreSQL. You can run a standard PostgreSQL 16 server locally, or install the TimescaleDB extension.
-- **Port:** `5432`
-- **Username:** `postgres`
-- **Password:** `postgres`
-- **Database Name:** `emsdb`
-
-> [!NOTE]
-> Database migrations are handled automatically by **Flyway** when the Spring Boot backend starts. You only need to create the empty database `emsdb` beforehand.
-
-### 2. Redis 7
-Redis is used for caching, session management, and as the message broker for Celery.
-- **Port:** `6379`
-- **Host:** `localhost`
-
-### 3. MinIO (S3-Compatible Object Storage)
-MinIO is used for storing uploaded report files and datasets.
-- **API Port:** `9000`
-- **Console Port:** `9001`
-- **Access Key (Username):** `minioadmin`
-- **Secret Key (Password):** `minioadmin`
-- **Default Bucket:** `ems-bucket` (Make sure to create this bucket via the MinIO console at http://localhost:9001 or using the client tool `mc`).
+| Service | Technology Stack | Port | Description |
+| :--- | :--- | :--- | :--- |
+| **`ems-frontend`** | React 18, TypeScript, Vite | `5173` | Rich interactive dashboard with ECharts load curves. |
+| **`ems-backend`** | Spring Boot 3.3, Java 21, Maven | `8080` | Core API, Flyway migrations, report generator (OpenPDF). |
+| **`ems-ml`** | Python 3.12, FastAPI, SQLAlchemy | `8001` | ML API service triggering parallel background jobs. |
+| **`ems-ml-worker`** | Celery, Redis | *Internal* | Asynchronous worker processing Isolation Forest & Prophet models. |
+| **`timescaledb`** | PostgreSQL 16 + TimescaleDB extension | `5432` | Relational & hypertable time-series database. |
+| **`redis`** | Redis 7 | `6379` | Key-value store for session cache, token blacklisting, & Celery broker. |
+| **`minio`** | MinIO Object Store (S3-compatible) | `9000` (API), `9001` (Console) | Secure PDF report storage bucket. |
 
 ---
 
-## 🚀 Running the Application Services
+## 🚀 How to Run the Project (Traditional Local Setup)
 
-The EMS suite consists of four primary services. Run each service in its own terminal window or session.
+Please follow these step-by-step instructions to set up and run the project natively on your host machine.
 
-### 1. Spring Boot Backend (`ems-backend`)
-The backend is a Java 21 / Maven application.
+### 📋 Prerequisites
 
+Before starting, copy the example environment file to create your active local `.env`:
+```bash
+cp .env.example .env
+```
+
+---
+
+### Step 1: Start Infrastructure Dependencies
+Ensure the following services are installed and running locally:
+1. **TimescaleDB / PostgreSQL 16:**
+   - Create an empty database named `emsdb` under user `postgres` (password: `postgres`).
+   - *Note: Database schemas & migrations are managed by Flyway and run automatically when the Spring Boot backend starts.*
+2. **Redis 7:**
+   - Ensure Redis is running locally on port `6379`.
+3. **MinIO:**
+   - Start a local MinIO server.
+   - Go to http://localhost:9001, sign in (`minioadmin`/`minioadmin`), and create a bucket named `ems-bucket`.
+
+---
+
+### Step 2: Run the Spring Boot Backend (`ems-backend`)
 1. Navigate to the backend directory:
    ```bash
    cd ems-backend
    ```
-2. Verify that your environment variables match the configuration in `.env`.
-3. Build and run the service using Maven:
+2. Verify Java 21 is active on your host (`java -version`).
+3. Run the application:
    ```bash
    mvn spring-boot:run
    ```
-   *The backend will boot up on http://localhost:8080.*
+   *The backend starts on http://localhost:8080.*
 
 ---
 
-### 2. Machine Learning API Service (`ems-ml`)
-The ML service is a Python 3.12+ FastAPI application.
-
-1. Navigate to the ML service directory:
+### Step 3: Run the Machine Learning Microservice (`ems-ml`)
+1. Open a new terminal and navigate to the ML directory:
    ```bash
    cd ems-ml
    ```
-2. Activate the virtual environment (if you have one set up):
+2. Create and activate a Python virtual environment:
    ```bash
-   source venv/bin/activate
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
-   *(On Windows: `venv\Scripts\activate`)*
 3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-4. Run the FastAPI server using Uvicorn:
+4. Start the FastAPI server:
    ```bash
    uvicorn main:app --host 127.0.0.1 --port 8001
    ```
-   *The ML API will start on http://localhost:8001.*
 
 ---
 
-### 3. Celery Worker (`ems-ml` background worker)
-The Celery worker processes background ML tasks (e.g. anomaly detection, forecasting).
-
-1. Open a new terminal and navigate to the ML service directory:
+### Step 4: Run the Celery Worker (`ems-ml` queue)
+1. Open a new terminal and navigate to the ML directory:
    ```bash
    cd ems-ml
    ```
-2. Activate the virtual environment:
+2. Activate your virtual environment:
    ```bash
    source venv/bin/activate
    ```
-3. Run the Celery worker:
+3. Run the background worker:
    ```bash
    celery -A celery_app worker --loglevel=info
    ```
 
 ---
 
-### 4. React Frontend (`ems-frontend`)
-The frontend is a Vite / TypeScript / React application.
-
-1. Navigate to the frontend directory:
+### Step 5: Run the React Frontend (`ems-frontend`)
+1. Open a new terminal and navigate to the frontend directory:
    ```bash
    cd ems-frontend
    ```
-2. Install the node packages:
+2. Install Node packages (Node 18+ required):
    ```bash
    npm install
    ```
-3. Start the Vite development server:
+3. Run the development server:
    ```bash
    npm run dev
    ```
-   *The frontend will run on http://localhost:5173.*
+   *The client web app starts on http://localhost:5173.*
 
 ---
 
-## 🧹 Cleaning Up Docker Configuration
+## 🛠️ Troubleshooting & Configuration Gotchas
 
-If you want to permanently delete the unused Docker configuration files from the project workspace, you can execute the following terminal command in the root folder:
+> [!IMPORTANT]
+> **Java Version Error:** 
+> If the backend fails to compile with a JVM target version mismatch, verify that your IDE or local terminal environment is set to JDK 21. If using IntelliJ or VS Code, check that the project runtime SDK points to OpenJDK 21.
 
-```bash
-rm docker-compose.yml ems-backend/Dockerfile ems-frontend/Dockerfile ems-ml/Dockerfile ems-ml/celery_worker.Dockerfile
-```
+> [!WARNING]
+> **Python Dependency Compilation Errors:**
+> If you are running a host with a bleed-edge Python version (like Python 3.13 or 3.14), library dependencies such as `pandas` or `prophet` might fail to compile locally due to version conflicts. Make sure to use Python 3.12 for local installation.

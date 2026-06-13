@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: ems-backend
+  profiles:
+    active: dev
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:emsdb}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 500
+        order_inserts: true
+        order_updates: true
+    show-sql: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+jwt:
+  secret: ${JWT_SECRET:supersecretjwtkeyforprodemsapp1234567890!}
+  expiration-ms: ${JWT_EXPIRY_MS:3600000}
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRY_MS:86400000}
+
+ml:
+  service:
+    url: ${ML_SERVICE_URL:http://localhost:8001}
+
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  accessKey: ${MINIO_ACCESS_KEY:minioadmin}
+  secretKey: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:ems-bucket}
+
+whatsapp:
+  api:
+    token: ${WHATSAPP_API_TOKEN}
+    phoneNumberId: ${WHATSAPP_PHONE_NUMBER_ID}
+
+twilio:
+  sid: ${TWILIO_SID}
+  authToken: ${TWILIO_AUTH_TOKEN}
+  from: ${TWILIO_FROM}
+
+cors:
+  origins: ${CORS_ORIGINS:http://localhost:5173}

@@ -49,7 +49,7 @@ public class AlertController {
         if (userDetails == null) {
             throw new UnauthorizedException("User session not authenticated");
         }
-        return userRepository.findByEmail(userDetails.getUsername())
+        return userRepository.findByEmailWithFactory(userDetails.getUsername())
                 .orElseThrow(() -> new UnauthorizedException("User profile not found"));
     }
 }

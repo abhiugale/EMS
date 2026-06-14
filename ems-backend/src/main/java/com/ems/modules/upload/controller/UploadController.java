@@ -30,23 +30,43 @@ public class UploadController {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Called immediately after file selection.
+     * Returns the Excel column headers AND the detected format ("WIDE" or "NARROW").
+     */
+    @PostMapping("/preview")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ENERGY_MGR')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> previewHeaders(
+            @RequestParam("file") MultipartFile file) throws IOException {
+        Map<String, Object> preview = uploadService.extractHeadersWithFormat(file);
+        return ResponseEntity.ok(ApiResponse.success(preview, "Headers extracted successfully"));
+    }
+
+    /**
+     * Full upload & ingestion endpoint.
+     *
+     * @param formatType "WIDE" (default) or "NARROW"
+     * @param mappingJson JSON object mapping system fields → Excel column names.
+     *   Wide  : { "timestamp":"Date", "machine_name":"Device", "energy_kwh":"Energy", … }
+     *   Narrow: { "timestamp":"Timestamp", "machine_name":"Device_ID",
+     *             "tag_col":"Tag", "value_col":"Value" }
+     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ENERGY_MGR')")
     public ResponseEntity<ApiResponse<UploadResultDto>> uploadAndProcess(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("mapping") String mappingJson,
-            @RequestParam("timezone") String timezone,
+            @RequestParam("file")        MultipartFile file,
+            @RequestParam("mapping")     String mappingJson,
+            @RequestParam("timezone")    String timezone,
+            @RequestParam(value = "formatType", defaultValue = "WIDE") String formatType,
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
         User user = getUser(userDetails);
-        Map<String, String> columnMapping = objectMapper.readValue(mappingJson, new TypeReference<Map<String, String>>() {});
+        Map<String, String> columnMapping = objectMapper.readValue(
+                mappingJson, new TypeReference<Map<String, String>>() {});
 
         UploadResultDto result = uploadService.uploadAndProcess(
-                file,
-                columnMapping,
-                timezone,
-                user.getFactory().getId(),
-                user.getId()
+                file, columnMapping, timezone, formatType,
+                user.getFactory().getId(), user.getId()
         );
         return ResponseEntity.ok(ApiResponse.success(result, "File processed successfully"));
     }
@@ -60,10 +80,8 @@ public class UploadController {
     }
 
     private User getUser(UserDetails userDetails) {
-        if (userDetails == null) {
-            throw new UnauthorizedException("User session not authenticated");
-        }
-        return userRepository.findByEmail(userDetails.getUsername())
+        if (userDetails == null) throw new UnauthorizedException("User session not authenticated");
+        return userRepository.findByEmailWithFactory(userDetails.getUsername())
                 .orElseThrow(() -> new UnauthorizedException("User profile not found"));
     }
 }
